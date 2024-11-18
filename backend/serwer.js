@@ -4,10 +4,13 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const animalRoutes = require('./routes/animalRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+
 const createAnimalsTable = require("./migrations/create_animals_table");
 const createCategoriesTable = require("./migrations/create_categories_table");
+const createUsersTable = require('./migrations/create_users_table');
 
 createCategoriesTable();
+createUsersTable();
 createAnimalsTable();
 
 const app = express();
