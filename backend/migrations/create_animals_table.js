@@ -10,6 +10,7 @@ const createAnimalsTable =  () => {
             species VARCHAR(255) NOT NULL,
             age INT NOT NULL,
             description TEXT NOT NULL,
+            imageURL VARCHAR(255),
             categoryId INT, 
             caretakerId INT,
             FOREIGN KEY (caretakerId) REFERENCES users(userId)
