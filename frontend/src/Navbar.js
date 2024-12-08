@@ -14,6 +14,9 @@ function Navbar()  {
                         <NavLink to="/">Strona Główna</NavLink>
                     </li>
                     <li>
+                        <NavLink to="/adoptions">Adopcje</NavLink>
+                    </li>
+                    <li>
                         <NavLink to="/events">Wydarzenia</NavLink>
                     </li>
                 </ol>
