@@ -20,7 +20,9 @@ function Events() {
         const response = await axios.get(`http://localhost:8001/events`);
         const eventsWithFullImageUrl = response.data.map((event) => ({
           ...event,
-          imageUrl: `http://localhost:8001/eventImage/${event.imageUrl}`,
+          imageUrl: event.imageUrl
+            ? `http://localhost:8001/eventImage/${event.imageUrl}`
+            : null, 
         }));
         setEvents(eventsWithFullImageUrl);
       } catch (error) {
@@ -61,7 +63,7 @@ function Events() {
     try {
       await axios.delete(`http://localhost:8001/events/removeevent/${eventId}`);
       setEvents((prevEvents) =>
-        prevEvents.filter((event) => event.id !== eventId)
+        prevEvents.filter((event) => event.eventId !== eventId)
       );
     } catch (error) {
       console.error("Błąd podczas usuwania wydarzenia:", error);
@@ -157,29 +159,25 @@ function Events() {
 
         {events.length > 0 && (
           <div className="events">
-            {events.map((event) => {
-              let validImageUrl = event.imageUrl.replace(
-                "http://localhost:8001/eventImage/",
-                ""
-              );
-              return (
-                <div key={event.eventId} className="event">
-                  {validImageUrl !== "null" && (
-                    <img src={validImageUrl} alt={event.title} />
-                  )}
-                  <div className="event-right">
-                    <h2>{event.title}</h2>
-                    <p>{event.shortDescription}</p>
-                    <p
-                      className="more-info"
-                      onClick={() => setSelectedEvent(event)}
-                    >
-                      Dowiedz się więcej
-                    </p>
-                  </div>
+            {events.map((event) => (
+              <div key={event.eventId} className="event">
+                {event.imageUrl ? (
+                  <img src={event.imageUrl} alt={event.title} />
+                ) : (
+                  <div className="no-image">Brak zdjęcia</div>
+                )}
+                <div className="event-right">
+                  <h2>{event.title}</h2>
+                  <p>{event.shortDescription}</p>
+                  <p
+                    className="more-info"
+                    onClick={() => setSelectedEvent(event)}
+                  >
+                    Dowiedz się więcej
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -193,14 +191,10 @@ function Events() {
           <div className="popup">
             <div className="event-popup-inner">
               <h2>{selectedEvent.title}</h2>
-              {!selectedEvent.imageUrl.endsWith("null") && (
-                <img
-                  src={selectedEvent.imageUrl.replace(
-                    "http://localhost:8001/eventImage/",
-                    ""
-                  )}
-                  alt={selectedEvent.title}
-                />
+              {selectedEvent.imageUrl ? (
+                <img src={selectedEvent.imageUrl} alt={selectedEvent.title} />
+              ) : (
+                <div className="no-image">Brak zdjęcia</div>
               )}
               <span>OPIS WYDARZENIA</span>
               <div className="description-container">
