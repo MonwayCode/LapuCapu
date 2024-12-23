@@ -6,6 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const animalRoutes = require('./routes/animalRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const caretakerRoutes = require('./routes/caretakerRoutes');
 
 const createAnimalsTable = require("./migrations/create_animals_table");
 const createCategoriesTable = require("./migrations/create_categories_table");
@@ -29,6 +30,7 @@ app.use('/users', userRoutes);
 app.use('/animals', animalRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/events', eventRoutes);
+app.use('/caretakers', caretakerRoutes);
 
 
 app.listen(8001, () => {

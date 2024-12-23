@@ -1,6 +1,5 @@
 const db = require('../config/database');
 
-
 exports.addAnimal = (req, res) => {
     const { name, species, age, description, imageURL, categoryId, caretakerId } = req.body;
 
