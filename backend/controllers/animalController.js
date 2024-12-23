@@ -2,13 +2,13 @@ const db = require('../config/database');
 
 
 exports.addAnimal = (req, res) => {
-    const { name, species, age, description, category_id, caretakerName, caretakerContact } = req.body;
+    const { name, species, age, description, imageURL, categoryId, caretakerId } = req.body;
 
     const sql = `
-        INSERT INTO animals (name, species, age, description, category_id, caretakerName, caretakerContact)
+        INSERT INTO animals (name, species, age, description, imageURL, categoryId, caretakerId)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    const values = [name, species, age, description, category_id, caretakerName, caretakerContact];
+    const values = [name, species, age, description, imageURL, categoryId, caretakerId];
 
     db.query(sql, values, (err, result) => {
         if (err) {
@@ -22,9 +22,10 @@ exports.addAnimal = (req, res) => {
             species,
             age,
             description,
-            category_id,
-            caretakerName,
-            caretakerContact,
+            imageURL,
+            categoryId,
+            caretakerId,
+            
         });
     });
 };
@@ -34,7 +35,7 @@ exports.addAnimal = (req, res) => {
 exports.getAnimalById = (req, res) => {
     const { id } = req.params;
 
-    const sql = 'SELECT * FROM animals WHERE id = ?';
+    const sql = 'SELECT * FROM animals WHERE animalId = ?';
     db.query(sql, [id], (err, results) => {
         if (err) {
             console.error(err);
@@ -73,10 +74,11 @@ exports.deleteAnimalById = (req, res) => {
 
 exports.updateAnimal = (req, res) => {
     const { id } = req.params;
-    const { name, species, age, description, category_id, caretakerName, caretakerContact } = req.body;  // Nowe dane zwierzęcia
+    const { name, species, age, description, imageURL, categoryId, caretakerId } = req.body;
 
-    if (!name || !species || !age || !description || !category_id || !caretakerName || !caretakerContact) {
-        return res.status(400).json({ error: 'All fields are required' });
+    
+    if (!name || !species || !age || !description) {
+        return res.status(400).json({ error: 'Name, species, age, and description are required' });
     }
 
     
@@ -87,15 +89,16 @@ exports.updateAnimal = (req, res) => {
             species = ?, 
             age = ?, 
             description = ?, 
-            category_id = ?, 
-            caretakerName = ?, 
-            caretakerContact = ?
-        WHERE id = ?
+            imageURL = ?, 
+            categoryId = ?, 
+            caretakerId = ?
+        WHERE animalId = ?
     `;
 
-    const values = [name, species, age, description, category_id, caretakerName, caretakerContact, id];
-
     
+    const values = [name, species, age, description, imageURL, categoryId, caretakerId, id];
+
+   
     db.query(sql, values, (err, result) => {
         if (err) {
             console.error(err);
@@ -106,15 +109,16 @@ exports.updateAnimal = (req, res) => {
             return res.status(404).json({ message: 'Animal not found' });
         }
 
+        
         res.status(200).json({
             id,
             name,
             species,
             age,
             description,
-            category_id,
-            caretakerName,
-            caretakerContact,
+            imageURL,
+            categoryId,
+            caretakerId
         });
     });
 };

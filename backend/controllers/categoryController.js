@@ -30,7 +30,7 @@ exports.addCategory = (req, res) => {
 exports.getCategoryById = (req, res) => {
     const { id } = req.params;
 
-    const sql = 'SELECT * FROM categories WHERE id = ?';
+    const sql = 'SELECT * FROM categories WHERE categoryId = ?';
     db.query(sql, [id], (err, results) => {
         if (err) {
             console.error(err);
