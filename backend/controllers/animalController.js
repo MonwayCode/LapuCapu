@@ -50,11 +50,25 @@ exports.getAnimalById = (req, res) => {
 };
 
 
+exports.getAllAnimals = (req, res) => {
+    const sql = 'SELECT * FROM animals';
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Failed to retrieve animals' });
+        }
+
+        res.status(200).json(results);
+    });
+};
+
+
 
 exports.deleteAnimalById = (req, res) => {
     const { id } = req.params;
 
-    const sql = 'DELETE FROM animals WHERE id = ?';
+    const sql = 'DELETE FROM animals WHERE animalId = ?';
     db.query(sql, [id], (err, results) => {
         if (err) {
             console.error(err);

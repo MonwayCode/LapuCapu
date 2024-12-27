@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 
 function Animals() {
   const [animals, setAnimals] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [popup, setPopup] = useState(false);
   const [categoryPopup, setCategoryPopup] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
@@ -12,12 +13,27 @@ function Animals() {
     age: "",
     description: "",
     categoryId: "",
-    caretakerId: "",
+    
   });
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
   });
+
+  useEffect(() => {
+    fetch("http://localhost:8001/categories")
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+      .catch((err) => console.error("Failed to fetch categories:", err));
+  }, []);
+
+
+  useEffect(() => {
+    fetch("http://localhost:8001/animals")
+      .then((res) => res.json())
+      .then((data) => setAnimals(data))
+      .catch((err) => console.error("Failed to fetch animals:", err));
+  }, []);
 
   const openForm = (animal = null) => {
     setSelectedAnimal(animal);
@@ -29,8 +45,8 @@ function Animals() {
             species: "",
             age: "",
             description: "",
-            category_id: "",
-            caretakerId: "",
+            categoryId: "",
+            
           }
     );
     setPopup(true);
@@ -42,17 +58,90 @@ function Animals() {
   };
 
   const handleSubmit = () => {
+    // Tworzymy obiekt do wysłania z tymczasowym categoryId ustawionym na null
+    const animalToSubmit = { ...newAnimal, categoryId: null };
+  
     if (selectedAnimal) {
-      // zauktualizuj dane zwierzaka
+      // Edycja istniejącego zwierzęcia
+      fetch(`http://localhost:8001/animals/${selectedAnimal.animalId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(animalToSubmit),
+      })
+        .then((res) => {
+          if (res.ok) {
+            // Aktualizujemy stan po edycji
+            setAnimals((prevAnimals) =>
+              prevAnimals.map((animal) =>
+                animal.animalId === selectedAnimal.animalId
+                  ? { ...animalToSubmit, animalId: selectedAnimal.animalId }
+                  : animal
+              )
+            );
+            setPopup(false); // Zamykamy formularz
+            setSelectedAnimal(null); // Resetujemy wybrane zwierzę
+          } else {
+            console.error("Failed to update animal");
+          }
+        })
+        .catch((err) => console.error("Error updating animal:", err));
     } else {
-      // dodaj nowego zwierzaka
+      // Dodawanie nowego zwierzęcia
+      fetch("http://localhost:8001/animals/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(animalToSubmit),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          // Dodajemy nowego zwierzaka do stanu
+          setAnimals((prevAnimals) => [...prevAnimals, data]);
+          setPopup(false); // Zamykamy formularz
+        })
+        .catch((err) => {
+          console.error("Failed to add animal:", err);
+        });
     }
-    setPopup(false);
+  };
+
+
+  const handleDelete = (animalId) => {
+    console.log("Deleting animal with animalId:", animalId);
+    fetch(`http://localhost:8001/animals/${animalId}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (res.ok) {
+          // Po usunięciu zwierzęcia, zaktualizuj stan animals
+          setAnimals((prevAnimals) => prevAnimals.filter((animal) => animal.animalId !== animalId));
+        } else {
+          console.error("Failed to delete animal");
+        }
+      })
+      .catch((err) => console.error("Error deleting animal:", err));
   };
 
   //dodawanie nowej kategorii
   const handleAddCategory = () => {
-    setCategoryPopup(false);
+    fetch("http://localhost:8001/categories/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newCategory),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Category added:", data);
+        setCategories((prevCategories) => [...prevCategories, data]); // Dodanie kategorii do stanu
+        setCategoryPopup(false); // Zamknięcie popupu
+        setNewCategory({ name: "", description: "" }); // Czyszczenie formularza
+      })
+      .catch((err) => console.error("Failed to add category:", err));
   };
 
   return (
@@ -184,9 +273,21 @@ function Animals() {
                     ></textarea>
                   </div>
                   <div className="mb-3">
-                    <label>Kategoria</label>
-                    {/* Opcje z pobranych kategorii? */}
-                  </div>
+    <label htmlFor="categoryId" className="form-label">Kategoria</label>
+    <select
+        id="categoryId"
+        value={newAnimal.categoryId}
+        className="form-control"
+        onChange={handleChange} // Aktualizuje newAnimal.categoryId
+    >
+        <option value="" disabled>Wybierz kategorię...</option>
+        {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+                {category.name}
+            </option>
+        ))}
+    </select>
+</div>
                   <div className="mb-3">
                     Dane opiekuna
                     {/* Opcje z pobranych opiekunów? */}
@@ -215,14 +316,14 @@ function Animals() {
         <div>
           {animals.length > 0 &&
             animals.map((animal) => (
-              <div key={animal.id}>
+              <div key={animal.animalId}>
                 {animal.name}
                 {animal.species}
                 {animal.age}
                 {animal.description}
                 {/* kategoria */}
                 {/* info opiekuna */}
-                <button>Usuń zwierzę</button>
+                <button onClick={() => handleDelete(animal.animalId)}>Usuń zwierzę</button>
                 <button onClick={() => openForm(animal)}>Edytuj</button>
               </div>
             ))}

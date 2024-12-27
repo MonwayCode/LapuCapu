@@ -4,6 +4,7 @@ const animalController = require('../controllers/animalController');
 
 router.post('/add', animalController.addAnimal);
 router.get('/:id', animalController.getAnimalById);
+router.get('/', animalController.getAllAnimals);
 router.put('/:id', animalController.updateAnimal);
 router.delete('/:id', animalController.deleteAnimalById);
 
