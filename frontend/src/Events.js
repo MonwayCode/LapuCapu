@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Navbar from "./Navbar";
+import { useGlobalContext } from "./GlobalContext";
+import defaultImage from "./assets/default-img.jpg";
+import SuccessAlert from "./SuccessAlert";
 
 function Events() {
+  const { userId } = useGlobalContext();
+
   const [events, setEvents] = useState([]);
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -12,6 +16,7 @@ function Events() {
   const [imageFile, setImageFile] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [alert, setAlert] = useState({ show: false, message: "" });
 
   // Pobieranie wydarzeń
   useEffect(() => {
@@ -22,7 +27,7 @@ function Events() {
           ...event,
           imageUrl: event.imageUrl
             ? `http://localhost:8001/eventImage/${event.imageUrl}`
-            : null, 
+            : null,
         }));
         setEvents(eventsWithFullImageUrl);
       } catch (error) {
@@ -52,7 +57,18 @@ function Events() {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
+      console.log("Odpowiedź serwera:", response);
       setEvents((prevEvents) => [...prevEvents, response.data]);
+      setShowPopup(false);
+      setNewEvent({
+        title: "",
+        shortDescription: "",
+        longDescription: "",
+      });
+      setAlert({
+        show: true,
+        message: "Pomyślnie dodano wydarzenie",
+      });
     } catch (error) {
       console.error("Błąd podczas dodawania wydarzenia:", error);
     }
@@ -65,6 +81,11 @@ function Events() {
       setEvents((prevEvents) =>
         prevEvents.filter((event) => event.eventId !== eventId)
       );
+      setSelectedEvent(null);
+      setAlert({
+        show: true,
+        message: "Pomyślnie usunięto wydarzenie",
+      });
     } catch (error) {
       console.error("Błąd podczas usuwania wydarzenia:", error);
     }
@@ -72,15 +93,23 @@ function Events() {
 
   return (
     <div>
-      <Navbar />
+      {/* alert */}
+      {alert.show && (
+        <SuccessAlert
+          message={alert.message}
+          onClose={() => setAlert({ show: false, message: "" })}
+        />
+      )}
       <div className="container-events">
         <div>
-          <button
-            className="submit-btn event-btn"
-            onClick={() => setShowPopup(true)}
-          >
-            Dodaj wydarzenie
-          </button>
+          {userId && (
+            <button
+              className="submit-btn event-btn"
+              onClick={() => setShowPopup(true)}
+            >
+              Dodaj wydarzenie
+            </button>
+          )}
 
           {showPopup && (
             <div className="popup">
@@ -164,7 +193,7 @@ function Events() {
                 {event.imageUrl ? (
                   <img src={event.imageUrl} alt={event.title} />
                 ) : (
-                  <div className="no-image">Brak zdjęcia</div>
+                  <img src={defaultImage} alt={event.title}/>
                 )}
                 <div className="event-right">
                   <h2>{event.title}</h2>
@@ -200,12 +229,14 @@ function Events() {
               <div className="description-container">
                 <p>{selectedEvent.longDescription}</p>
               </div>
-              <button
-                onClick={() => handleDeleteEvent(selectedEvent.eventId)}
-                className="btn add-btn"
-              >
-                Usuń wydarzenie
-              </button>
+              {userId && (
+                <button
+                  onClick={() => handleDeleteEvent(selectedEvent.eventId)}
+                  className="btn add-btn"
+                >
+                  Usuń wydarzenie
+                </button>
+              )}
               <button
                 onClick={() => setSelectedEvent(null)}
                 className="btn btn-secondary ms-2"

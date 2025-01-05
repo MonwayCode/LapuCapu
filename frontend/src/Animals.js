@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "./Navbar";
+import SuccessAlert from "./SuccessAlert";
+import defaultImage from "./assets/default-img.jpg";
+import AnimalPopup from "./AnimalPopup";
+import { useGlobalContext } from "./GlobalContext";
+import { Tabs, Tab } from "react-bootstrap";
 
 function Animals() {
+  const { userId } = useGlobalContext();
   const [animals, setAnimals] = useState([]);
   const [categories, setCategories] = useState([]);
   const [popup, setPopup] = useState(false);
   const [categoryPopup, setCategoryPopup] = useState(false);
+  const [alert, setAlert] = useState({ show: false, message: "" });
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [newAnimal, setNewAnimal] = useState({
     name: "",
@@ -13,12 +19,13 @@ function Animals() {
     age: "",
     description: "",
     categoryId: "",
-    
   });
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
   });
+  const [showAnimalPopup, setShowAnimalPopup] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
     fetch("http://localhost:8001/categories")
@@ -26,7 +33,6 @@ function Animals() {
       .then((data) => setCategories(data))
       .catch((err) => console.error("Failed to fetch categories:", err));
   }, []);
-
 
   useEffect(() => {
     fetch("http://localhost:8001/animals")
@@ -46,7 +52,6 @@ function Animals() {
             age: "",
             description: "",
             categoryId: "",
-            
           }
     );
     setPopup(true);
@@ -60,7 +65,7 @@ function Animals() {
   const handleSubmit = () => {
     // Tworzymy obiekt do wysłania z tymczasowym categoryId ustawionym na null
     const animalToSubmit = { ...newAnimal, categoryId: null };
-  
+
     if (selectedAnimal) {
       // Edycja istniejącego zwierzęcia
       fetch(`http://localhost:8001/animals/${selectedAnimal.animalId}`, {
@@ -82,6 +87,10 @@ function Animals() {
             );
             setPopup(false); // Zamykamy formularz
             setSelectedAnimal(null); // Resetujemy wybrane zwierzę
+            setAlert({
+              show: true,
+              message: "Pomyślnie zaktualizowano zwierzę",
+            });
           } else {
             console.error("Failed to update animal");
           }
@@ -101,13 +110,13 @@ function Animals() {
           // Dodajemy nowego zwierzaka do stanu
           setAnimals((prevAnimals) => [...prevAnimals, data]);
           setPopup(false); // Zamykamy formularz
+          setAlert({ show: true, message: "Pomyślnie dodano nowe zwierzę" });
         })
         .catch((err) => {
           console.error("Failed to add animal:", err);
         });
     }
   };
-
 
   const handleDelete = (animalId) => {
     console.log("Deleting animal with animalId:", animalId);
@@ -117,7 +126,10 @@ function Animals() {
       .then((res) => {
         if (res.ok) {
           // Po usunięciu zwierzęcia, zaktualizuj stan animals
-          setAnimals((prevAnimals) => prevAnimals.filter((animal) => animal.animalId !== animalId));
+          setAnimals((prevAnimals) =>
+            prevAnimals.filter((animal) => animal.animalId !== animalId)
+          );
+          setAlert({ show: true, message: "Pomyślnie usunięto zwierzę" });
         } else {
           console.error("Failed to delete animal");
         }
@@ -140,79 +152,152 @@ function Animals() {
         setCategories((prevCategories) => [...prevCategories, data]); // Dodanie kategorii do stanu
         setCategoryPopup(false); // Zamknięcie popupu
         setNewCategory({ name: "", description: "" }); // Czyszczenie formularza
+        setAlert({ show: true, message: "Pomyślnie dodano nową kategorię" });
       })
       .catch((err) => console.error("Failed to add category:", err));
   };
 
+  const handleAnimalClick = (animal) => {
+    setShowAnimalPopup(animal);
+  };
+
+  const closePopup = () => {
+    setShowAnimalPopup(null);
+  };
+
+  // zwięrzęta z danej kategorii
+  const renderAnimals = (filteredAnimals) => {
+    return filteredAnimals.length > 0 ? (
+      filteredAnimals.map((animal) => (
+        <div key={animal.animalId} className="animal">
+          <img
+            src={animal.imageURL || defaultImage}
+            alt={animal.name}
+            onClick={() => handleAnimalClick(animal)}
+          />
+          <h2>{animal.name}</h2>
+          <p>
+            Wiek: {animal.age}{" "}
+            {animal.age === 1
+              ? "rok"
+              : animal.age < 1 || animal.age > 4
+              ? "lat"
+              : "lata"}
+          </p>
+          <p>
+            {animal.description.length > 100
+              ? animal.description.slice(0, 100) + "..."
+              : animal.description}
+          </p>
+          <p className="more-info" onClick={() => handleAnimalClick(animal)}>
+            Dowiedz się więcej
+          </p>
+          <div className="buttons">
+            {userId && (
+              <button
+                style={{ marginBottom: "5px" }}
+                className="btn add-btn"
+                onClick={() => handleDelete(animal.animalId)}
+              >
+                Usuń zwierzę
+              </button>
+            )}
+            {userId && (
+              <button className="btn add-btn" onClick={() => openForm(animal)}>
+                Edytuj
+              </button>
+            )}
+          </div>
+        </div>
+      ))
+    ) : (
+      <h2>Brak zwierząt do adopcji</h2>
+    );
+  };
+
   return (
     <div>
-      <Navbar />
+      {/* alert */}
+      {alert.show && (
+        <SuccessAlert
+          message={alert.message}
+          onClose={() => setAlert({ show: false, message: "" })}
+        />
+      )}
 
-      {/* Dodawanie kategorii */}
-      <div>
-        <button onClick={() => setCategoryPopup(true)}>Dodaj kategorię</button>
-        {categoryPopup && (
-          <div className="popup">
-            <div className="popup-inner">
-              <h2>Dodaj kategorię</h2>
-              <form>
-                <div className="mb-3">
-                  <label htmlFor="catName" className="form-label">
-                    Nazwa
-                  </label>
-                  <input
-                    id="catName"
-                    type="text"
-                    className="form-control"
-                    onChange={(e) =>
-                      setNewCategory({ ...newCategory, name: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="catDescription" className="form-label">
-                    Opis
-                  </label>
-                  <textarea
-                    id="catDescription"
-                    className="form-control"
-                    onChange={(e) =>
-                      setNewCategory({
-                        ...newCategory,
-                        description: e.target.value,
-                      })
-                    }
-                  ></textarea>
-                </div>
-                <button
-                  type="button"
-                  className="btn add-btn"
-                  onClick={handleAddCategory}
-                >
-                  Dodaj
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary ms-2"
-                  onClick={() => {
-                    setCategoryPopup(false);
-                    setNewCategory({ name: "", description: "" });
-                  }}
-                >
-                  Anuluj
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* dodawanie / updatowanie zwierzat */}
       <div className="container-events">
-        <div>
-          <button className="submit-btn event-btn" onClick={() => openForm()}>
-            Dodaj zwierzę
-          </button>
+        <div className="animals-buttons-container">
+          {/* Dodawanie kategorii */}
+          {userId && (
+            <button
+              className="submit-btn event-btn"
+              style={{ marginRight: "15px" }}
+              onClick={() => setCategoryPopup(true)}
+            >
+              Dodaj kategorię
+            </button>
+          )}
+          {categoryPopup && (
+            <div className="popup">
+              <div className="popup-inner">
+                <h2>Dodaj kategorię</h2>
+                <form>
+                  <div className="mb-3">
+                    <label htmlFor="catName" className="form-label">
+                      Nazwa
+                    </label>
+                    <input
+                      id="catName"
+                      type="text"
+                      className="form-control"
+                      onChange={(e) =>
+                        setNewCategory({ ...newCategory, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="catDescription" className="form-label">
+                      Opis
+                    </label>
+                    <textarea
+                      id="catDescription"
+                      className="form-control"
+                      onChange={(e) =>
+                        setNewCategory({
+                          ...newCategory,
+                          description: e.target.value,
+                        })
+                      }
+                    ></textarea>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn add-btn"
+                    onClick={handleAddCategory}
+                  >
+                    Dodaj
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary ms-2"
+                    onClick={() => {
+                      setCategoryPopup(false);
+                      setNewCategory({ name: "", description: "" });
+                    }}
+                  >
+                    Anuluj
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* dodawanie / updatowanie zwierzat */}
+          {userId && (
+            <button className="submit-btn event-btn" onClick={() => openForm()}>
+              Dodaj zwierzę
+            </button>
+          )}
           {popup && (
             <div className="popup">
               <div className="popup-inner">
@@ -273,24 +358,36 @@ function Animals() {
                     ></textarea>
                   </div>
                   <div className="mb-3">
-    <label htmlFor="categoryId" className="form-label">Kategoria</label>
-    <select
-        id="categoryId"
-        value={newAnimal.categoryId}
-        className="form-control"
-        onChange={handleChange} // Aktualizuje newAnimal.categoryId
-    >
-        <option value="" disabled>Wybierz kategorię...</option>
-        {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-                {category.name}
-            </option>
-        ))}
-    </select>
-</div>
+                    <label htmlFor="categoryId" className="form-label">
+                      Kategoria
+                    </label>
+                    <select
+                      id="categoryId"
+                      value={newAnimal.categoryId}
+                      className="form-control"
+                      onChange={handleChange} // Aktualizuje newAnimal.categoryId
+                    >
+                      <option value="" disabled>
+                        Wybierz kategorię...
+                      </option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="mb-3">
                     Dane opiekuna
                     {/* Opcje z pobranych opiekunów? */}
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Zdjęcie</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      onChange={(e) => setImageFile(e.target.files[0])} // dodawanie zdjęcia do imageFile
+                    />
                   </div>
                   <button
                     type="button"
@@ -312,23 +409,45 @@ function Animals() {
           )}
         </div>
 
-        {/* wyświetlanie zwierząt */}
-        <div>
-          {animals.length > 0 &&
-            animals.map((animal) => (
-              <div key={animal.animalId}>
-                {animal.name}
-                {animal.species}
-                {animal.age}
-                {animal.description}
-                {/* kategoria */}
-                {/* info opiekuna */}
-                <button onClick={() => handleDelete(animal.animalId)}>Usuń zwierzę</button>
-                <button onClick={() => openForm(animal)}>Edytuj</button>
-              </div>
-            ))}
-          {animals.length === 0 && <h2>Brak zwierząt do adopcji</h2>}
-        </div>
+        {/* Zakładki z kategoriami zwierząt */}
+        <Tabs
+          defaultActiveKey="all"
+          id="animal-tabs"
+          className="mb-3 nav-justified"
+        >
+          <Tab eventKey="all" title="Wszystkie zwierzęta">
+            <div
+              className={`animals ${animals.length === 1 ? "single-item" : ""}`}
+            >
+              {renderAnimals(animals)}
+            </div>
+          </Tab>
+          {categories.map((category) => {
+            const filteredAnimals = animals.filter(
+              (animal) => animal.categoryId === category.categoryId
+            );
+            return (
+              <Tab
+                key={category.categoryId}
+                eventKey={category.categoryId}
+                title={category.name}
+              >
+                <div
+                  className={`animals ${
+                    filteredAnimals.length === 1 ? "single-item" : ""
+                  }`}
+                >
+                  {renderAnimals(filteredAnimals)}
+                </div>
+              </Tab>
+            );
+          })}
+        </Tabs>
+
+        {/* Popup wybranego zwierzaka */}
+        {showAnimalPopup && (
+          <AnimalPopup animal={showAnimalPopup} onClose={closePopup} />
+        )}
       </div>
     </div>
   );

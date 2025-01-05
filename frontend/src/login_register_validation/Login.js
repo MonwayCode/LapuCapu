@@ -4,8 +4,10 @@ import axios from "axios";
 
 import Validation from "./LoginValid";
 import dogPhoto from "../assets/dog-photo-login.jpg";
+import { useGlobalContext } from "../GlobalContext";
 
 function Login() {
+  const { login } = useGlobalContext();
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -32,6 +34,7 @@ function Login() {
         .post("http://localhost:8001/users/login", values)
         .then((res) => {
           if (res.data.error === null) {
+            login(res.data.userId);
             window.localStorage.setItem("userId", res.data.userId);
             navigate("/");
           } else {
