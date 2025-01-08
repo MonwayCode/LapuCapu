@@ -40,8 +40,8 @@ function Home() {
     return 0;
   };
 
-  const dogCount = getAnimalCountByCategory("pies");
-  const catCount = getAnimalCountByCategory("kot");
+  const dogCount = getAnimalCountByCategory("Psy");
+  const catCount = getAnimalCountByCategory("koty");
 
   function getDogLabel(count) {
     if (count === 1) return "pies";

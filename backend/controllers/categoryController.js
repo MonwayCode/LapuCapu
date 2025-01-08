@@ -65,7 +65,9 @@ exports.getAllCategories = (req, res) => {
 exports.deleteCategoryById = (req, res) => {
     const { id } = req.params;
 
-    const sql = 'DELETE FROM categories WHERE id = ?';
+    
+
+    const sql = 'DELETE FROM categories WHERE categoryId = ?';
     db.query(sql, [id], (err, results) => {
         if (err) {
             console.error(err);
@@ -97,7 +99,7 @@ exports.updateCategory = (req, res) => {
         SET 
             name = ?, 
             description = ?
-        WHERE id = ?
+        WHERE categoryId = ?
     `;
 
     const values = [name, description, id];

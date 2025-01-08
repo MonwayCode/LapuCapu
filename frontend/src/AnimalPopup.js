@@ -1,7 +1,7 @@
 import React from "react";
 import defaultImage from "./assets/default-img.jpg";
 
-function AnimalPopup({ animal, onClose }) {
+function AnimalPopup({ animal, onClose, onDelete }) {
   return (
     <div className="popup">
       <div className="animal-inner-popup">
@@ -24,10 +24,18 @@ function AnimalPopup({ animal, onClose }) {
                 : "lata"}
             </p>
             <span>Dane opiekuna:</span>
-            <p>Imie: </p>
-            <p>Nazwisko: </p>
-            <p>Email: </p>
-            <p>Telefon: </p>
+            
+            {animal.caretakerName && (
+              <>
+                <p>Imię: {animal.caretakerName}</p>
+                <p>Nazwisko: {animal.caretakerSurname}</p>
+                <p>Email: {animal.caretakerEmail}</p>
+                <p>Telefon: {animal.caretakerPhone}</p>
+              </>
+            )}
+            {!animal.caretakerName && (
+              <p>Brak danych opiekuna</p>
+            )}
           </div>
         </div>
         <span>Opis zwierzęcia:</span>
@@ -36,7 +44,10 @@ function AnimalPopup({ animal, onClose }) {
         <p>{animal.description}</p>
         </div>
         <div className="btn-container">
-          <button className="btn add-btn">Adoptuj</button>
+          <button className="btn add-btn"
+          onClick={() => {onDelete(animal.animalId); onClose();}}
+          >
+            Adoptuj</button>
           <button className="btn add-btn">Wpłać</button>
         </div>
       </div>

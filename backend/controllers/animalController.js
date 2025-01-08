@@ -63,7 +63,34 @@ exports.getAllAnimals = (req, res) => {
     });
 };
 
+exports.getAllAnimalsWithCaretaker = (req, res) => {
+    const sql = `
+        SELECT 
+            a.animalId,
+            a.name AS animalName,
+            a.species,
+            a.age,
+            a.description,
+            a.imageURL,
+            a.categoryId,
+            a.caretakerId,
+            u.name AS caretakerName,
+            u.surname AS caretakerSurname,
+            u.email AS caretakerEmail,
+            u.phone AS caretakerPhone
+        FROM animals a
+        LEFT JOIN users u ON a.caretakerId = u.userId
+    `;
+    
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Failed to retrieve animals' });
+        }
 
+        res.status(200).json(results);
+    });
+};
 
 exports.deleteAnimalById = (req, res) => {
     const { id } = req.params;

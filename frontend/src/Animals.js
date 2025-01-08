@@ -41,6 +41,14 @@ function Animals() {
       .catch((err) => console.error("Failed to fetch animals:", err));
   }, []);
 
+  useEffect(() => {
+    // Pobieranie zwierząt wraz z opiekunami
+    fetch("http://localhost:8001/animals/with-caretaker")
+      .then((res) => res.json())
+      .then((data) => setAnimals(data))
+      .catch((err) => console.error("Failed to fetch animals with caretakers:", err));
+  }, []);
+
   const openForm = (animal = null) => {
     setSelectedAnimal(animal);
     setNewAnimal(
@@ -446,7 +454,7 @@ function Animals() {
 
         {/* Popup wybranego zwierzaka */}
         {showAnimalPopup && (
-          <AnimalPopup animal={showAnimalPopup} onClose={closePopup} />
+          <AnimalPopup animal={showAnimalPopup} onClose={closePopup} onDelete={handleDelete} />
         )}
       </div>
     </div>
