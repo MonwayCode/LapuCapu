@@ -15,7 +15,6 @@ function Animals() {
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [newAnimal, setNewAnimal] = useState({
     name: "",
-    species: "",
     age: "",
     description: "",
     categoryId: "",
@@ -48,6 +47,7 @@ function Animals() {
       .then((data) => setAnimals(data))
       .catch((err) => console.error("Failed to fetch animals with caretakers:", err));
   }, []);
+  
 
   const openForm = (animal = null) => {
     setSelectedAnimal(animal);
@@ -69,11 +69,9 @@ function Animals() {
     const { id, value } = e.target;
     setNewAnimal((prev) => ({ ...prev, [id]: value }));
   };
-
   const handleSubmit = () => {
-    // Tworzymy obiekt do wysłania z tymczasowym categoryId ustawionym na null
-    const animalToSubmit = { ...newAnimal, categoryId: null };
-
+    const animalToSubmit = { ...newAnimal, categoryId: parseInt(newAnimal.categoryId) }; // Zamiana na ID kategorii
+  
     if (selectedAnimal) {
       // Edycja istniejącego zwierzęcia
       fetch(`http://localhost:8001/animals/${selectedAnimal.animalId}`, {
@@ -251,11 +249,11 @@ function Animals() {
                 <h2>Dodaj kategorię</h2>
                 <form>
                   <div className="mb-3">
-                    <label htmlFor="catName" className="form-label">
+                    <label htmlFor="name" className="form-label">
                       Nazwa
                     </label>
                     <input
-                      id="catName"
+                      id="name"
                       type="text"
                       className="form-control"
                       onChange={(e) =>
@@ -264,11 +262,11 @@ function Animals() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="catDescription" className="form-label">
+                    <label htmlFor="description" className="form-label">
                       Opis
                     </label>
                     <textarea
-                      id="catDescription"
+                      id="description"
                       className="form-control"
                       onChange={(e) =>
                         setNewCategory({
@@ -324,23 +322,26 @@ function Animals() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="species" className="form-label">
+                    <label htmlFor="categoryId" className="form-label">
                       Gatunek
                     </label>
                     <select
-                      id="species"
-                      value={newAnimal.species}
+                      id="categoryId"
+                      value={newAnimal.categoryId}
                       className="form-control"
                       onChange={handleChange}
                     >
                       <option value="" disabled>
-                        Wybierz...
+                        Wybierz kategorię...
                       </option>
-                      <option value="pies">Pies</option>
-                      <option value="kot">Kot</option>
-                      <option value="Inne zwierzę">Inne zwierzę</option>
+                      {categories.map((category) => (
+                        <option key={category.categoryId} value={category.categoryId}>
+                          {category.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
+
                   <div className="mb-3">
                     <label htmlFor="age" className="form-label">
                       Wiek
@@ -364,26 +365,6 @@ function Animals() {
                       value={newAnimal.description}
                       onChange={handleChange}
                     ></textarea>
-                  </div>
-                  <div className="mb-3">
-                    <label htmlFor="categoryId" className="form-label">
-                      Kategoria
-                    </label>
-                    <select
-                      id="categoryId"
-                      value={newAnimal.categoryId}
-                      className="form-control"
-                      onChange={handleChange} // Aktualizuje newAnimal.categoryId
-                    >
-                      <option value="" disabled>
-                        Wybierz kategorię...
-                      </option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
                   </div>
                   <div className="mb-3">
                     Dane opiekuna

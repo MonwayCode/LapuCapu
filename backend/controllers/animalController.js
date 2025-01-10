@@ -1,13 +1,13 @@
 const db = require('../config/database');
 
 exports.addAnimal = (req, res) => {
-    const { name, species, age, description, imageURL, categoryId, caretakerId } = req.body;
+    const { name, age, description, imageURL, categoryId, caretakerId } = req.body;
 
     const sql = `
-        INSERT INTO animals (name, species, age, description, imageURL, categoryId, caretakerId)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO animals (name, age, description, imageURL, categoryId, caretakerId)
+        VALUES (?, ?, ?, ?, ?, ?)
     `;
-    const values = [name, species, age, description, imageURL, categoryId, caretakerId];
+    const values = [name, age, description, imageURL, categoryId, caretakerId];
 
     db.query(sql, values, (err, result) => {
         if (err) {
@@ -18,7 +18,6 @@ exports.addAnimal = (req, res) => {
         res.status(201).json({
             id: result.insertId,
             name,
-            species,
             age,
             description,
             imageURL,
@@ -68,7 +67,6 @@ exports.getAllAnimalsWithCaretaker = (req, res) => {
         SELECT 
             a.animalId,
             a.name AS animalName,
-            a.species,
             a.age,
             a.description,
             a.imageURL,
@@ -114,11 +112,11 @@ exports.deleteAnimalById = (req, res) => {
 
 exports.updateAnimal = (req, res) => {
     const { id } = req.params;
-    const { name, species, age, description, imageURL, categoryId, caretakerId } = req.body;
+    const { name, age, description, imageURL, categoryId, caretakerId } = req.body;
 
     
-    if (!name || !species || !age || !description) {
-        return res.status(400).json({ error: 'Name, species, age, and description are required' });
+    if (!name || !age || !description) {
+        return res.status(400).json({ error: 'Name, , age, and description are required' });
     }
 
     
@@ -126,7 +124,7 @@ exports.updateAnimal = (req, res) => {
         UPDATE animals
         SET 
             name = ?, 
-            species = ?, 
+             = ?, 
             age = ?, 
             description = ?, 
             imageURL = ?, 
@@ -136,7 +134,7 @@ exports.updateAnimal = (req, res) => {
     `;
 
     
-    const values = [name, species, age, description, imageURL, categoryId, caretakerId, id];
+    const values = [name, , age, description, imageURL, categoryId, caretakerId, id];
 
    
     db.query(sql, values, (err, result) => {
@@ -153,7 +151,6 @@ exports.updateAnimal = (req, res) => {
         res.status(200).json({
             id,
             name,
-            species,
             age,
             description,
             imageURL,
