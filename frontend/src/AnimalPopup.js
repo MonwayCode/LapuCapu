@@ -1,7 +1,8 @@
 import React from "react";
 import defaultImage from "./assets/default-img.jpg";
 
-function AnimalPopup({ animal, onClose, onDelete }) {
+function AnimalPopup({ animal, onClose, onAdopt, onDonate }) {
+
   return (
     <div className="popup">
       <div className="animal-inner-popup">
@@ -45,10 +46,10 @@ function AnimalPopup({ animal, onClose, onDelete }) {
         </div>
         <div className="btn-container">
           <button className="btn add-btn"
-          onClick={() => {onDelete(animal.animalId); onClose();}}
+          onClick={() => onAdopt(animal.animalId)}
           >
             Adoptuj</button>
-          <button className="btn add-btn">Wpłać</button>
+          <button className="btn add-btn" onClick={onDonate}>Wpłać</button>
         </div>
       </div>
     </div>

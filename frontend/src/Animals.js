@@ -24,6 +24,7 @@ function Animals() {
     description: "",
   });
   const [showAnimalPopup, setShowAnimalPopup] = useState(null);
+  const [successPopup, setSuccessPopup] = useState(null);
   const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
@@ -45,9 +46,10 @@ function Animals() {
     fetch("http://localhost:8001/animals/with-caretaker")
       .then((res) => res.json())
       .then((data) => setAnimals(data))
-      .catch((err) => console.error("Failed to fetch animals with caretakers:", err));
+      .catch((err) =>
+        console.error("Failed to fetch animals with caretakers:", err)
+      );
   }, []);
-  
 
   const openForm = (animal = null) => {
     setSelectedAnimal(animal);
@@ -69,9 +71,13 @@ function Animals() {
     const { id, value } = e.target;
     setNewAnimal((prev) => ({ ...prev, [id]: value }));
   };
+
   const handleSubmit = () => {
-    const animalToSubmit = { ...newAnimal, categoryId: parseInt(newAnimal.categoryId) }; // Zamiana na ID kategorii
-  
+    const animalToSubmit = {
+      ...newAnimal,
+      categoryId: parseInt(newAnimal.categoryId)
+    }; // Zamiana na ID kategorii
+
     if (selectedAnimal) {
       // Edycja istniejącego zwierzęcia
       fetch(`http://localhost:8001/animals/${selectedAnimal.animalId}`, {
@@ -221,10 +227,27 @@ function Animals() {
     );
   };
 
+  const showSuccessMessage = (message) => {
+    setSuccessPopup(message);
+  };
+
+  const handleAdoptAnimal = (animalId) => {
+    handleDelete(animalId);
+    setShowAnimalPopup(null);
+    showSuccessMessage("Adopcja udana!");
+  };
+
+  const handleDonate = () => {
+    setShowAnimalPopup(null);
+    showSuccessMessage("Wpłata udana!");
+  };
+
+  console.log(animals)
+
   return (
     <div>
       {/* alert */}
-      {alert.show && (
+      {alert.show && userId && (
         <SuccessAlert
           message={alert.message}
           onClose={() => setAlert({ show: false, message: "" })}
@@ -335,7 +358,10 @@ function Animals() {
                         Wybierz kategorię...
                       </option>
                       {categories.map((category) => (
-                        <option key={category.categoryId} value={category.categoryId}>
+                        <option
+                          key={category.categoryId}
+                          value={category.categoryId}
+                        >
                           {category.name}
                         </option>
                       ))}
@@ -404,7 +430,7 @@ function Animals() {
           id="animal-tabs"
           className="mb-3 nav-justified"
         >
-          <Tab eventKey="all" title="Wszystkie zwierzęta">
+          <Tab key="all" eventKey="all" title="Wszystkie zwierzęta">
             <div
               className={`animals ${animals.length === 1 ? "single-item" : ""}`}
             >
@@ -435,7 +461,27 @@ function Animals() {
 
         {/* Popup wybranego zwierzaka */}
         {showAnimalPopup && (
-          <AnimalPopup animal={showAnimalPopup} onClose={closePopup} onDelete={handleDelete} />
+          <AnimalPopup
+            animal={showAnimalPopup}
+            onClose={closePopup}
+            onDelete={handleDelete}
+            onAdopt={handleAdoptAnimal}
+            onDonate={handleDonate}
+          />
+        )}
+
+        {successPopup && (
+          <div className="success-popup-overlay">
+            <div className="success-popup">
+              <p>{successPopup}</p>
+              <button
+                className="btn close-btn"
+                onClick={() => setSuccessPopup("")}
+              >
+                Zamknij
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

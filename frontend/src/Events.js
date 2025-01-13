@@ -59,16 +59,6 @@ function Events() {
       );
       console.log("Odpowiedź serwera:", response);
       setEvents((prevEvents) => [...prevEvents, response.data]);
-      setShowPopup(false);
-      setNewEvent({
-        title: "",
-        shortDescription: "",
-        longDescription: "",
-      });
-      setAlert({
-        show: true,
-        message: "Pomyślnie dodano wydarzenie",
-      });
     } catch (error) {
       console.error("Błąd podczas dodawania wydarzenia:", error);
     }
@@ -161,7 +151,18 @@ function Events() {
                   <button
                     type="button"
                     className="btn add-btn"
-                    onClick={handleAddEvent}
+                    onClick={(
+                      () => {handleAddEvent();
+                      setShowPopup(false);
+                      setNewEvent({
+                        title: "",
+                        shortDescription: "",
+                        longDescription: "",
+                      });
+                      setAlert({
+                        show: true,
+                        message: "Pomyślnie dodano wydarzenie",
+                      });})}
                   >
                     Dodaj
                   </button>
@@ -223,7 +224,7 @@ function Events() {
               {selectedEvent.imageUrl ? (
                 <img src={selectedEvent.imageUrl} alt={selectedEvent.title} />
               ) : (
-                <div className="no-image">Brak zdjęcia</div>
+                <img src={defaultImage} alt={selectedEvent.title}/>
               )}
               <span>OPIS WYDARZENIA</span>
               <div className="description-container">

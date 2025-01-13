@@ -66,7 +66,7 @@ exports.getAllAnimalsWithCaretaker = (req, res) => {
     const sql = `
         SELECT 
             a.animalId,
-            a.name AS animalName,
+            a.name,
             a.age,
             a.description,
             a.imageURL,
@@ -124,7 +124,6 @@ exports.updateAnimal = (req, res) => {
         UPDATE animals
         SET 
             name = ?, 
-             = ?, 
             age = ?, 
             description = ?, 
             imageURL = ?, 
@@ -134,8 +133,7 @@ exports.updateAnimal = (req, res) => {
     `;
 
     
-    const values = [name, , age, description, imageURL, categoryId, caretakerId, id];
-
+    const values = [name, age, description, imageURL, categoryId, caretakerId, id];
    
     db.query(sql, values, (err, result) => {
         if (err) {

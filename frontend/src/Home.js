@@ -28,8 +28,17 @@ function Home() {
   const getAnimalCountByCategory = (categoryName) => {
     if (categories.length === 0) return 0;
 
-    const category = categories.find(
-      (category) => category.name.toLowerCase() === categoryName.toLowerCase()
+    const categoryMap = {
+      psy: ["psy", "pies"],
+      koty: ["koty", "kot"],
+    };
+
+    const normalizedCategories = categoryMap[categoryName.toLowerCase()] || [
+      categoryName.toLowerCase(),
+    ];
+
+    const category = categories.find((category) =>
+      normalizedCategories.includes(category.name.toLowerCase())
     );
 
     if (category) {
