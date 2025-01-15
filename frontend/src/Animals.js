@@ -27,6 +27,7 @@ function Animals() {
   const [showAnimalPopup, setShowAnimalPopup] = useState(null);
   const [successPopup, setSuccessPopup] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  const [animalsWithCaretaker, setAnimalsWithCaretaker] = useState([]);
 
   useEffect(() => {
     fetch("http://localhost:8001/categories")
@@ -46,19 +47,18 @@ function Animals() {
     // Pobieranie zwierząt wraz z opiekunami
     fetch("http://localhost:8001/animals/with-caretaker")
       .then((res) => res.json())
-      .then((data) => setAnimals(data))
+      .then((data) => setAnimalsWithCaretaker(data))
       .catch((err) =>
         console.error("Failed to fetch animals with caretakers:", err)
       );
   }, []);
   useEffect(() => {
     // Pobranie opiekunów
-    fetch("http://localhost:8001/users") 
+    fetch("http://localhost:8001/users")
       .then((res) => res.json())
       .then((data) => setCaretakers(data))
       .catch((err) => console.error("Failed to fetch caretakers:", err));
   }, []);
-  
 
   const openForm = (animal = null) => {
     setSelectedAnimal(animal);
@@ -67,7 +67,6 @@ function Animals() {
         ? { ...animal }
         : {
             name: "",
-            species: "",
             age: "",
             description: "",
             categoryId: "",
@@ -81,51 +80,57 @@ function Animals() {
     setNewAnimal((prev) => ({ ...prev, [id]: value }));
   };
 
+  console.log("NEW animal: ");
+  console.log(newAnimal);
+
   const handleSubmit = () => {
     const animalToSubmit = {
       ...newAnimal,
       categoryId: parseInt(newAnimal.categoryId),
     };
-  
+
     const formData = new FormData();
-    
-    formData.append('name', newAnimal.name);
-    formData.append('age', newAnimal.age);
-    formData.append('description', newAnimal.description);
-    formData.append('categoryId', animalToSubmit.categoryId);
-    formData.append('caretakerId', newAnimal.caretakerId);
-  
+
+    formData.append("name", newAnimal.name);
+    formData.append("age", newAnimal.age);
+    formData.append("description", newAnimal.description);
+    formData.append("categoryId", animalToSubmit.categoryId);
+    formData.append("caretakerId", newAnimal.caretakerId);
+
     if (imageFile) {
-      formData.append('image', imageFile);
+      formData.append("image", imageFile);
     }
-  
+
     if (selectedAnimal) {
+      formData.forEach((value, key) => {
+        console.log(`${key}:`, value);
+      });
       fetch(`http://localhost:8001/animals/${selectedAnimal.animalId}`, {
         method: "PUT",
-        body: formData, 
+        body: formData,
       })
-      .then((res) => {
-        if (res.ok) {
-          setAnimals((prevAnimals) =>
-            prevAnimals.map((animal) =>
-              animal.animalId === selectedAnimal.animalId
-                ? { ...animalToSubmit, animalId: selectedAnimal.animalId }
-                : animal
-            )
-          );
-          setPopup(false);
-          setSelectedAnimal(null);
-          setAlert({
-            show: true,
-            message: "Działanie zakończone pomyślnie",
-          });
-        }
-      })      
+        .then((res) => {
+          if (res.ok) {
+            setAnimals((prevAnimals) =>
+              prevAnimals.map((animal) =>
+                animal.animalId === selectedAnimal.animalId
+                  ? { ...animalToSubmit, animalId: selectedAnimal.animalId }
+                  : animal
+              )
+            );
+            setPopup(false);
+            setSelectedAnimal(null);
+            setAlert({
+              show: true,
+              message: "Działanie zakończone pomyślnie",
+            });
+          }
+        })
         .catch((err) => console.error("Error updating animal:", err));
     } else {
       fetch("http://localhost:8001/animals/add", {
         method: "POST",
-        body: formData, 
+        body: formData,
       })
         .then((res) => res.json())
         .then((data) => {
@@ -138,8 +143,7 @@ function Animals() {
         });
     }
   };
-  
-  
+
   const handleDelete = (animalId) => {
     console.log("Deleting animal with animalId:", animalId);
     fetch(`http://localhost:8001/animals/${animalId}`, {
@@ -180,7 +184,11 @@ function Animals() {
   };
 
   const handleAnimalClick = (animal) => {
-    setShowAnimalPopup(animal);
+    const selectedAnimalWithCaretaker = animalsWithCaretaker.find(
+      (animalWithCaretaker) => animalWithCaretaker.animalId === animal.animalId
+    );
+
+    setShowAnimalPopup(selectedAnimalWithCaretaker || animal);
   };
 
   const closePopup = () => {
@@ -193,7 +201,10 @@ function Animals() {
       filteredAnimals.map((animal) => (
         <div key={animal.animalId} className="animal">
           <img
-            src={animal.imageURL || defaultImage}
+            src={
+              `http://localhost:8001/animalImage/${animal.imageURL}` ||
+              defaultImage
+            }
             alt={animal.name}
             onClick={() => handleAnimalClick(animal)}
           />
@@ -252,7 +263,7 @@ function Animals() {
     showSuccessMessage("Wpłata udana!");
   };
 
-  console.log(animals)
+  console.log(animals);
 
   return (
     <div>
@@ -411,7 +422,10 @@ function Animals() {
                       value={newAnimal.caretakerId || ""}
                       className="form-control"
                       onChange={(e) =>
-                        setNewAnimal((prev) => ({ ...prev, caretakerId: e.target.value }))
+                        setNewAnimal((prev) => ({
+                          ...prev,
+                          caretakerId: e.target.value,
+                        }))
                       }
                     >
                       <option value="" disabled>
