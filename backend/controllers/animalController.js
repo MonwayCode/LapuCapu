@@ -1,40 +1,59 @@
 const db = require('../config/database');
 
+const multer = require("multer");
+const path = require("path");
+const fs = require('fs');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "animalImage/"); // Folder docelowy dla przesłanych plików
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Unikalna nazwa pliku
+  },
+});
+
+const upload = multer({ storage }).single("image");
+
 exports.addAnimal = (req, res) => {
-    const { name, age, description, imageURL, categoryId, caretakerId } = req.body;
-
-    const sql = `
-        INSERT INTO animals (name, age, description, imageURL, categoryId, caretakerId)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `;
-    const values = [name, age, description, imageURL, categoryId, caretakerId];
-
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to add animal' });
+    upload(req, res, (err) => {
+        if (err) 
+        {
+          return res.status(500).json;
         }
+        const { name, age, description, categoryId, caretakerId } = req.body;
+        const imageURL = req.file ? req.file.filename : null; // Ścieżka do przesłanego pliku obrazu
 
-        res.status(201).json({
-            id: result.insertId,
-            name,
-            age,
-            description,
-            imageURL,
-            categoryId,
-            caretakerId,
-            
+        const sql = `
+            INSERT INTO animals (name, age, description, imageURL, categoryId, caretakerId)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+        const values = [name, age, description, imageURL, categoryId, caretakerId];
+
+        db.query(sql, values, (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Failed to add animal' });
+            }
+
+            res.status(201).json({
+                animalId: result.insertId,
+                name,
+                age,
+                description,
+                imageURL,
+                categoryId,
+                caretakerId,
+            });
         });
     });
 };
 
-
-
 exports.getAnimalById = (req, res) => {
-    const { id } = req.params;
+    const { animalId } = req.params;
 
     const sql = 'SELECT * FROM animals WHERE animalId = ?';
-    db.query(sql, [id], (err, results) => {
+    db.query(sql, [animalId], (err, results) => {
         if (err) {
             console.error(err);
             return res.status(500).json({ error: 'Failed to retrieve animal' });
@@ -47,7 +66,6 @@ exports.getAnimalById = (req, res) => {
         res.json(results[0]);
     });
 };
-
 
 exports.getAllAnimals = (req, res) => {
     const sql = 'SELECT * FROM animals';
@@ -90,70 +108,130 @@ exports.getAllAnimalsWithCaretaker = (req, res) => {
     });
 };
 
-exports.deleteAnimalById = (req, res) => {
-    const { id } = req.params;
+exports.deleteAnimalImages = (req, res) => {
+    const { animalId } = req.params;
+    const ds = `SELECT imageURL FROM animals WHERE animalId = ?`;  // Pobieranie nazwy obrazka by go usunąć z folderu
 
-    const sql = 'DELETE FROM animals WHERE animalId = ?';
-    db.query(sql, [id], (err, results) => {
+    db.query(ds, [animalId], (err, results) => {
+        if (err) 
+        {
+          console.error("Błąd przy pobieraniu obrazu:", err);
+          return res.status(500).json({ error: "Błąd przy pobieraniu obrazu" });
+        }
+    
+        if (!results.length) 
+        {
+          console.error("Nie znaleziono zwierzęcia z podanym animalId");
+          return res.status(404).json({ error: "Nie znaleziono zwierzęcia" });
+        }
+        
+        const imageURL = results[0].imageURL; // Pobranie nazwy pliku obrazu (jeśli istnieje)
+        if (imageURL) 
+        {
+            const filePath = path.join(__dirname, "../animalImage", imageURL);
+    
+            fs.unlink(filePath, (error) => {
+            if (error) 
+            {
+                console.error("Błąd przy usuwaniu pliku:", error);
+                return res.status(500).json({ error: "Błąd przy usuwaniu pliku" });
+            }
+            console.log("Plik został pomyślnie usunięty:", filePath);
+            removeAnimal(animalId, res); // Usunięcie zwierzęcia z bazy danych
+        });
+        } 
+        else 
+        {
+          // Jeśli nie ma obrazka, tylko usuń zwierzę z bazy
+          removeAnimal(animalId, res);
+        }
+    });
+};    
+
+const removeAnimal = (animalId, res) => {
+    const sql = 'DELETE FROM animals WHERE animalId = ?';  
+    db.query(sql, [animalId], (err, results) => {
         if (err) {
             console.error(err);
             return res.status(500).json({error: 'Failed to delete an animal'});
         }
 
         if (results.affectedRows === 0) {
-            return res.status(404).json({message: 'Animal not found.'});
+            return res.status(404).json({message: 'Zwierzę nie zostało znalezione.'});
         }
 
-        res.status(200).json({message: 'success!'});
-    })
+        res.status(200).json({message: 'Zwierzę zostało pomyślnie usunięte!'});
+    });
 }
 
-
-
 exports.updateAnimal = (req, res) => {
-    const { id } = req.params;
-    const { name, age, description, imageURL, categoryId, caretakerId } = req.body;
-
+    const { animalId } = req.params;
+    const { name, age, description, categoryId, caretakerId } = req.body;
     
-    if (!name || !age || !description) {
-        return res.status(400).json({ error: 'Name, , age, and description are required' });
-    }
-
-    
-    const sql = `
-        UPDATE animals
-        SET 
-            name = ?, 
-            age = ?, 
-            description = ?, 
-            imageURL = ?, 
-            categoryId = ?, 
-            caretakerId = ?
-        WHERE animalId = ?
-    `;
-
-    
-    const values = [name, age, description, imageURL, categoryId, caretakerId, id];
-   
-    db.query(sql, values, (err, result) => {
+    upload(req, res, (err) => {
         if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to update animal' });
+            return res.status(500).json({ error: 'Error uploading image' });
         }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Animal not found' });
-        }
+        const imageURL = req.file ? req.file.filename : null; // Jeśli jest nowy plik, przypisz jego nazwę
 
+        // Jeśli nie ma nowego obrazu, nie zmieniamy ścieżki do obrazu
+        const sql = `
+            UPDATE animals
+            SET 
+                name = ?, 
+                age = ?, 
+                description = ?, 
+                ${imageURL ? 'imageURL = ?, ' : ''} 
+                categoryId = ?, 
+                caretakerId = ?
+            WHERE animalId = ?
+        `;
         
-        res.status(200).json({
-            id,
-            name,
-            age,
-            description,
-            imageURL,
-            categoryId,
-            caretakerId
+        // Jeśli mamy nowy obrazek, dodajemy go do tablicy wartości
+        const values = imageURL ? [name, age, description, imageURL, categoryId, caretakerId, animalId] : [name, age, description, categoryId, caretakerId, animalId];
+
+        db.query(sql, values, (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Failed to update animal' });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: 'Animal not found' });
+            }
+
+            // Jeśli był nowy obrazek, usuwa się poprzedni obrazek
+            if (imageURL) {
+                const ds = `SELECT imageURL FROM animals WHERE animalId = ?`;
+                db.query(ds, [animalId], (err, results) => {
+                    if (err) {
+                        console.error('Error fetching old image:', err);
+                    } else {
+                        const oldImageURL = results[0]?.imageURL;
+                        if (oldImageURL) {
+                            const oldImagePath = path.join(__dirname, '../animalImage', oldImageURL);
+                            fs.unlink(oldImagePath, (unlinkError) => {
+                                if (unlinkError) {
+                                    console.error('Error deleting old image:', unlinkError);
+                                } else {
+                                    console.log('Old image deleted successfully');
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            res.status(200).json({
+                animalId,
+                name,
+                age,
+                description,
+                imageURL: imageURL || undefined,  // Jeśli nie było nowego obrazu, wysyła poprzedni obraz
+                categoryId,
+                caretakerId
+            });
         });
     });
-};
+}; 

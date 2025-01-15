@@ -4,10 +4,10 @@ const animalController = require('../controllers/animalController');
 
 router.post('/add', animalController.addAnimal);
 router.get('/with-caretaker', animalController.getAllAnimalsWithCaretaker);
-router.get('/:id', animalController.getAnimalById);
+router.get('/:animalId', animalController.getAnimalById);
 router.get('/', animalController.getAllAnimals);
 
-router.put('/:id', animalController.updateAnimal);
-router.delete('/:id', animalController.deleteAnimalById);
+router.put('/:animalId', animalController.updateAnimal);
+router.delete('/:animalId', animalController.deleteAnimalImages);
 
 module.exports = router;

@@ -30,4 +30,16 @@ exports.loginUser = (req,res) => {
     })
 };
 
-
+exports.getUsers = (req,res) => {
+    const sql = `SELECT * FROM users`;
+    db.query(sql, (err,data) => {
+        if(err)
+        {
+            throw err;
+        }
+        else
+        {
+            return res.json(data);
+        }
+    });
+};

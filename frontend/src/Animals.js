@@ -12,6 +12,7 @@ function Animals() {
   const [popup, setPopup] = useState(false);
   const [categoryPopup, setCategoryPopup] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "" });
+  const [caretakers, setCaretakers] = useState([]);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [newAnimal, setNewAnimal] = useState({
     name: "",
@@ -50,6 +51,14 @@ function Animals() {
         console.error("Failed to fetch animals with caretakers:", err)
       );
   }, []);
+  useEffect(() => {
+    // Pobranie opiekunów
+    fetch("http://localhost:8001/users") 
+      .then((res) => res.json())
+      .then((data) => setCaretakers(data))
+      .catch((err) => console.error("Failed to fetch caretakers:", err));
+  }, []);
+  
 
   const openForm = (animal = null) => {
     setSelectedAnimal(animal);
@@ -75,61 +84,62 @@ function Animals() {
   const handleSubmit = () => {
     const animalToSubmit = {
       ...newAnimal,
-      categoryId: parseInt(newAnimal.categoryId)
-    }; // Zamiana na ID kategorii
-
+      categoryId: parseInt(newAnimal.categoryId),
+    };
+  
+    const formData = new FormData();
+    
+    formData.append('name', newAnimal.name);
+    formData.append('age', newAnimal.age);
+    formData.append('description', newAnimal.description);
+    formData.append('categoryId', animalToSubmit.categoryId);
+    formData.append('caretakerId', newAnimal.caretakerId);
+  
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+  
     if (selectedAnimal) {
-      // Edycja istniejącego zwierzęcia
       fetch(`http://localhost:8001/animals/${selectedAnimal.animalId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(animalToSubmit),
+        body: formData, 
       })
-        .then((res) => {
-          if (res.ok) {
-            // Aktualizujemy stan po edycji
-            setAnimals((prevAnimals) =>
-              prevAnimals.map((animal) =>
-                animal.animalId === selectedAnimal.animalId
-                  ? { ...animalToSubmit, animalId: selectedAnimal.animalId }
-                  : animal
-              )
-            );
-            setPopup(false); // Zamykamy formularz
-            setSelectedAnimal(null); // Resetujemy wybrane zwierzę
-            setAlert({
-              show: true,
-              message: "Pomyślnie zaktualizowano zwierzę",
-            });
-          } else {
-            console.error("Failed to update animal");
-          }
-        })
+      .then((res) => {
+        if (res.ok) {
+          setAnimals((prevAnimals) =>
+            prevAnimals.map((animal) =>
+              animal.animalId === selectedAnimal.animalId
+                ? { ...animalToSubmit, animalId: selectedAnimal.animalId }
+                : animal
+            )
+          );
+          setPopup(false);
+          setSelectedAnimal(null);
+          setAlert({
+            show: true,
+            message: "Działanie zakończone pomyślnie",
+          });
+        }
+      })      
         .catch((err) => console.error("Error updating animal:", err));
     } else {
-      // Dodawanie nowego zwierzęcia
       fetch("http://localhost:8001/animals/add", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(animalToSubmit),
+        body: formData, 
       })
         .then((res) => res.json())
         .then((data) => {
-          // Dodajemy nowego zwierzaka do stanu
           setAnimals((prevAnimals) => [...prevAnimals, data]);
-          setPopup(false); // Zamykamy formularz
-          setAlert({ show: true, message: "Pomyślnie dodano nowe zwierzę" });
+          setPopup(false);
+          setAlert({ show: true, message: "Działanie zakończone pomyślnie" });
         })
         .catch((err) => {
           console.error("Failed to add animal:", err);
         });
     }
   };
-
+  
+  
   const handleDelete = (animalId) => {
     console.log("Deleting animal with animalId:", animalId);
     fetch(`http://localhost:8001/animals/${animalId}`, {
@@ -393,8 +403,26 @@ function Animals() {
                     ></textarea>
                   </div>
                   <div className="mb-3">
-                    Dane opiekuna
-                    {/* Opcje z pobranych opiekunów? */}
+                    <label htmlFor="caretakerId" className="form-label">
+                      Opiekun
+                    </label>
+                    <select
+                      id="caretakerId"
+                      value={newAnimal.caretakerId || ""}
+                      className="form-control"
+                      onChange={(e) =>
+                        setNewAnimal((prev) => ({ ...prev, caretakerId: e.target.value }))
+                      }
+                    >
+                      <option value="" disabled>
+                        Wybierz opiekuna...
+                      </option>
+                      {caretakers.map((caretaker) => (
+                        <option key={caretaker.userId} value={caretaker.userId}>
+                          {caretaker.name} {caretaker.surname}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Zdjęcie</label>
